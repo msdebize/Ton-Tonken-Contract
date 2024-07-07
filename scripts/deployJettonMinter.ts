@@ -45,11 +45,11 @@ export async function run(provider: NetworkProvider) {
 
     const content = jettonContentToCell({type:1,uri:contentUrl});
 
-    const wallet_code = await compile('JettonWallet');
+    const walletCode = await compile('JettonWallet');
 
     const minter  = JettonMinter.createFromConfig({admin,
                                                   content,
-                                                  wallet_code,
+                                                  walletCode: walletCode,
                                                   }, 
                                                   await compile('JettonMinter'));
 

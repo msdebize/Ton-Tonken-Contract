@@ -44,7 +44,7 @@ describe('JettonWallet', () => {
                      {
                        admin: deployer.address,
                        content: defaultContent,
-                       wallet_code: jwallet_code,
+                       walletCode: jwallet_code,
                      },
                      minter_code));
         userWallet = async (address:Address) => blockchain.openContract(
