@@ -7,14 +7,14 @@ export type JettonMinterContent = {
     uri:string
 };
 
-export type JettonMinterConfig = {admin: Address; content: Cell; wallet_code: Cell};
+export type JettonMinterConfig = {admin: Address; content: Cell; walletCode: Cell};
 
 export function jettonMinterConfigToCell(config: JettonMinterConfig): Cell {
     return beginCell()
                       .storeCoins(0)
                       .storeAddress(config.admin)
                       .storeRef(config.content)
-                      .storeRef(config.wallet_code)
+                      .storeRef(config.walletCode)
            .endCell();
 }
 
@@ -46,61 +46,61 @@ export class JettonMinter implements Contract {
         });
     }
 
-    protected static jettonInternalTransfer(jetton_amount: bigint,
-                                            forward_ton_amount: bigint,
-                                            response_addr?: Address,
-                                            query_id: number | bigint = 0) {
+    protected static jettonInternalTransfer(jettonAmount: bigint,
+                                            forwardTonAmount: bigint,
+                                            responseAddress?: Address,
+                                            queryId: number | bigint = 0) {
         return beginCell()
                 .storeUint(Op.internal_transfer, 32)
-                .storeUint(query_id, 64)
-                .storeCoins(jetton_amount)
+                .storeUint(queryId, 64)
+                .storeCoins(jettonAmount)
                 .storeAddress(null)
-                .storeAddress(response_addr)
-                .storeCoins(forward_ton_amount)
+                .storeAddress(responseAddress)
+                .storeCoins(forwardTonAmount)
                 .storeBit(false)
                .endCell();
 
     }
-    static mintMessage(from: Address, to: Address, jetton_amount: bigint, forward_ton_amount: bigint, total_ton_amount: bigint, query_id: number | bigint = 0) {
+    static mintMessage(from: Address, to: Address, jettonAmount: bigint, forwardTonAmount: bigint, totalTonAmount: bigint, queryId: number | bigint = 0) {
 		const mintMsg = beginCell().storeUint(Op.internal_transfer, 32)
                                    .storeUint(0, 64)
-                                   .storeCoins(jetton_amount)
+                                   .storeCoins(jettonAmount)
                                    .storeAddress(null)
                                    .storeAddress(from) // Response addr
-                                   .storeCoins(forward_ton_amount)
+                                   .storeCoins(forwardTonAmount)
                                    .storeMaybeRef(null)
                     .endCell();
 
-        return beginCell().storeUint(Op.mint, 32).storeUint(query_id, 64) // op, queryId
+        return beginCell().storeUint(Op.mint, 32).storeUint(queryId, 64) // op, queryId
                           .storeAddress(to)
-                          .storeCoins(total_ton_amount)
-                          .storeCoins(jetton_amount)
+                          .storeCoins(totalTonAmount)
+                          .storeCoins(jettonAmount)
                           .storeRef(mintMsg)
                .endCell();
     }
-    async sendMint(provider: ContractProvider, via: Sender, to: Address, jetton_amount: bigint, forward_ton_amount: bigint, total_ton_amount: bigint) {
-        if(total_ton_amount <= forward_ton_amount) {
+    async sendMint(provider: ContractProvider, via: Sender, to: Address, jettonAmount: bigint, forwardTonAmount: bigint, totalTonAmount: bigint) {
+        if(totalTonAmount <= forwardTonAmount) {
             throw new Error("Total ton amount should be > forward amount");
         }
         await provider.internal(via, {
             sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: JettonMinter.mintMessage(this.address, to, jetton_amount, forward_ton_amount, total_ton_amount),
-            value: total_ton_amount + toNano('0.015'),
+            body: JettonMinter.mintMessage(this.address, to, jettonAmount, forwardTonAmount, totalTonAmount),
+            value: totalTonAmount + toNano('0.015'),
         });
     }
 
     /* provide_wallet_address#2c76b973 query_id:uint64 owner_address:MsgAddress include_address:Bool = InternalMsgBody;
     */
-    static discoveryMessage(owner: Address, include_address: boolean) {
+    static discoveryMessage(owner: Address, includeAddress: boolean) {
         return beginCell().storeUint(0x2c76b973, 32).storeUint(0, 64) // op, queryId
-                          .storeAddress(owner).storeBit(include_address)
+                          .storeAddress(owner).storeBit(includeAddress)
                .endCell();
     }
 
-    async sendDiscovery(provider: ContractProvider, via: Sender, owner: Address, include_address: boolean, value:bigint = toNano('0.1')) {
+    async sendDiscovery(provider: ContractProvider, via: Sender, owner: Address, includeAddress: boolean, value:bigint = toNano('0.1')) {
         await provider.internal(via, {
             sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: JettonMinter.discoveryMessage(owner, include_address),
+            body: JettonMinter.discoveryMessage(owner, includeAddress),
             value: value,
         });
     }
